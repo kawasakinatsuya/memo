@@ -25,6 +25,14 @@ find_package →　参照するパッケージ
 add_executable(point_removal_node src/point_removal.cpp) → src/point_removal.cppをpoint_removal_nodeとして扱う
 
 [clusterのコード]
+voxel.setLeafSize(0.02f, 0.02f, 0.02f);
+ →inputの点群を1辺2cmの立方体でダウンサンプリングする
+
+pcl::removeNaNFromPointCloud(*downsampled_input, *cloud_filtered, indices);
+ →不要な点群の除去。cloud_filteredが出力点群。
+ 
+
+
 
 [detect_groundのコード]
 
