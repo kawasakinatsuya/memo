@@ -1,0 +1,51 @@
+[velodyneの点群を表示させるまでの流れ]
+1. 環境の設定
+・Virtual Boxの設定
+　ネットアダプターの有効化にチェック
+　割当て→ブリッジアダプター
+　名前→PCの環境によって変わる
+　
+・ubuntuの設定
+　Settingsのwiredの詳細→IPv4 MethodをManual
+　↓Addresses
+　192.168.1.100
+　↓Netmask
+　255.255.255.0
+　　
+2. res-drivers/velodyneの実行
+cd ~/ros2_ws/
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch velodyne velodyne-all-nodes-VLP32C-launch.py
+
+3. my_processing（自作パッケージ）の実行
+・ビルド
+cd ~/ros2_ws
+colcon build --packages-select my_processing
+source install/setup.bash
+
+・実行
+source ~/ros2_ws/install/setup.bash
+ros2 run detect_ground detect_ground_node
+
+ros2 run my_processing distance_color_node
+
+ros2 run point_removal point_removal_node
+
+ros2 run cluster cluster_node
+
+4.rvizで表示
+cd ~/ros2_ws/
+source /opt/ros/humble/setup.bash
+rviz2
+
+5.rviz起動後の設定
+Fixed frameをvelodyneに設定
+[Add]よりPoint Cloud2を追加し、topicを指定（topicは"/"を入力すれば選択ができる）
+
+*velodyneのパラメータ設定*
+http://192.168.1.201
+
+sudo wireshark
+　　
+　　
