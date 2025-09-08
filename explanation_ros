@@ -30,7 +30,15 @@ voxel.setLeafSize(0.02f, 0.02f, 0.02f);
 
 pcl::removeNaNFromPointCloud(*downsampled_input, *cloud_filtered, indices);
  →不要な点群の除去。cloud_filteredが出力点群。
- 
+
+ec.setSearchMethod(tree);
+ →探索方法の指定
+
+ec.setInputCloud(cloud_filtered);
+ →クラスタリングを行う対象となる点群を指定
+
+ec.extract(cluster_indices);
+ →クラスタリングの結果をcluster_indicesに保存
 
 
 
