@@ -1,0 +1,36 @@
+[main.cppについて]
+・main関数の中身
+rclcpp::spin(std::make_shared<ClusterNode>());
+　→ClusterNodeをずっと回している
+
+・クラスの中身
+(public)　
+sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+      "/velodyne_points", 10,std::bind(&DistanceColorNode::cloud_callback, this, std::placeholders::_1));
+  →"/velodyne_points"トピックから情報を受け取る（点群の生情報）
+  
+pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
+      "/detect_ground", 10);
+ →"/detect_ground"トピックに情報を送る
+ 
+(private)
+pcl::fromROSMsg(*msg, *input);
+　→msgをPointXYZ型に変換
+　
+pcl::toROSMsg(*output, out_msg);
+　→outputをpublishできる型に変換
+　
+[CMakeLists.txt]
+find_package →　参照するパッケージ
+add_executable(point_removal_node src/point_removal.cpp) → src/point_removal.cppをpoint_removal_nodeとして扱う
+
+[clusterのコード]
+
+[detect_groundのコード]
+
+
+　
+
+
+
+
