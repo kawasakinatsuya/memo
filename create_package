@@ -1,0 +1,25 @@
+パッケージの作成方法
+ros2 pkg create hoge --build-type ament_cmake --dependencies rclcpp
+hoge：パッケージ名
+--dependencies：依存関係の記述。find_packgeに自動で記述してくれる
+
+velodyeパッケージのビルド
+cd ~/ros2_ws
+colcon build --packages-select velodyne_driver velodyne_laserscan velodyne_msgs velodyne_pointcloud
+
+--packages-select パッケージ名
+　→指定のパッケージのビルド
+
+--packages-up-to パッケージ名
+　→指定のパッケージとそれに依存するパッケージのビルド
+　
+source install/setup.bash
+　→ビルド後に環境を反映
+
+gedit ~/.bashrc
+　→bashrcファイルが開かれ、編集可能に
+　
+rm -rf build install log
+　→build, install, log の3つのフォルダを丸ごと削除して、前のビルド結果やキャッシュを完全に消去する
+　
+ros2 topic echo /velodyne_points
