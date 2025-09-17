@@ -1,6 +1,6 @@
 パッケージの作成方法
-ros2 pkg create hoge --build-type ament_cmake --dependencies rclcpp
-hoge：パッケージ名
+ros2 pkg create package_name --build-type ament_cmake --dependencies rclcpp
+package_name：パッケージ名
 --dependencies：依存関係の記述。find_packgeに自動で記述してくれる
 
 velodyeパッケージのビルド
