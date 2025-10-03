@@ -1,0 +1,13 @@
+ sudo add-apt-repository ppa:yannubuntu/boot-repair
+Repository: 'Types: deb
+URIs: https://ppa.launchpadcontent.net/yannubuntu/boot-repair/ubuntu/
+Suites: noble
+Components: main
+'
+Description:
+Simple tool to repair frequent boot problems.
+
+Website: https://sourceforge.net/p/boot-repair/home
+More info: https://launchpad.net/~yannubuntu/+archive/ubuntu/boot-repair
+Adding repository.
+Press [ENTER] to continue or Ctrl-c to cancel.
