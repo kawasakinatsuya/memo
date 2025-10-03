@@ -11,3 +11,11 @@ Website: https://sourceforge.net/p/boot-repair/home
 More info: https://launchpad.net/~yannubuntu/+archive/ubuntu/boot-repair
 Adding repository.
 Press [ENTER] to continue or Ctrl-c to cancel.
+
+Boot successfully repaired.
+A new file (/var/log/boot-repair/20251003_093845/Boot-Info_20251003_0938.txt) will open in your text viewer.
+In case you still experience boot problem, indicate its content to:
+boot.repair@gmail.com or to your favorite support forum.
+Locked-NVram detected. Please do not forget to make your UEFI firmware boot on the Ubuntu 24.04.3 LTS entry (nvme0n1p1/efi/ubuntu/grubx64.efi file) !
+
+
