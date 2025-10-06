@@ -1,6 +1,31 @@
 ↓ESP32のアドレス
 B0:B2:1C:A8:0C:BA
 
+bluetoothctl
+
+順番に入力
+power on
+agent on
+default-agent
+scan on
+
+pair B0:B2:1C:A8:0C:BA
+trust B0:B2:1C:A8:0C:BA
+connect B0:B2:1C:A8:0C:BA
+
+connect yesと出たらOK
+exitで抜ける
+
+sudo rfcomm bind 0 B0:B2:1C:A8:0C:BA
+ls /dev/rfcomm*
+
+↓シリアル通信ができるか試す
+sudo apt install screen
+screen /dev/rfcomm0 115200
+
+通信できていることを確認出来たらノード実行可能
+
+
 hcinconfig 
 →bluetoothデバイスの状態を確認
 
