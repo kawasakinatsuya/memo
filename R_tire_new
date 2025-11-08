@@ -1,0 +1,77 @@
+#include "BluetoothSerial.h"
+
+BluetoothSerial SerialBT;
+
+TaskHandle_t thp[1];//マルチスレッドのタスクハンドル格納用
+
+const int TX2_PIN = 17; //TX
+const int RX2_PIN = 16; //DX
+const int UART_BAUD = 115200;
+String buffer = "";
+String uart_buf = "";
+
+
+void setup() {
+  Serial.begin(115200);
+  Serial2.begin(UART_BAUD, SERIAL_8N1, RX2_PIN, TX2_PIN);
+  Serial2.setRxBufferSize(4096);
+  Serial2.setTxBufferSize(4096);
+  SerialBT.begin("L_TIRE");
+  Serial.println("Bluetooth L_TIRE READY");
+  xTaskCreatePinnedToCore(Core0a, "Core0a", 4096, NULL, 3, &thp[0], 0); 
+}
+
+void loop() {
+  uint8_t buf[256];
+  int n = Serial2.available();
+  if (n > 0) {
+    static unsigned long t_start = 0;
+    int len = Serial2.readBytes(buf,n);
+    for (int i = 0; i < len; i++){
+      char d = buf[i];
+      if(uart_buf.length() == 0){
+        t_start = millis();
+      }
+      if(d == ';'){
+        unsigned long t_end = millis();
+        Serial.printf("[time to get a line]:%lu", t_end-t_start);
+        SerialBT.write((uint8_t*)uart_buf.c_str(), uart_buf.length());
+        unsigned long t_send = millis();
+        Serial.printf("[time to send BTsend]:%lu\n", t_send - t_end);
+        uart_buf ="";
+      }
+      else{
+        uart_buf +=d;
+      }
+    }
+  }
+  delay(1);
+}
+
+void Core0a(void *args) {
+  static char bt_buf[50];
+  static int count = 0;
+  while (1) {
+    delay(1);
+    char c = SerialBT.read();
+    if (c == ';') {
+      if (buffer.length() > 0) {
+        bt_buf[count] = '\n';
+        Serial.print("Send to L_TIRE: ");
+        Serial.println(bt_buf);
+
+        Serial2.print(bt_buf);
+        count = 0;
+      }
+    } 
+    else {
+      if(count < sizeof(bt_buf) - 1){
+        bt_buf[count] = c;
+        count++;
+      }
+      else{
+        count=0;
+      }
+    }
+  }
+}
