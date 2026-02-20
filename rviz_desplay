@@ -1,0 +1,190 @@
+[velodyneの点群を表示させるまでの流れ]
+1. 環境の設定
+・Virtual Boxの設定
+　ネットアダプターの有効化にチェック
+　割当て→ブリッジアダプター
+　名前→PCの環境によって変わる
+　
+・ubuntuの設定
+　Settingsのwiredの詳細→IPv4 MethodをManual
+　↓Addresses
+　192.168.1.100
+　↓Netmask
+　255.255.255.0
+
+2. ノード（自作パッケージ）の実行
+(a)ros-drivers/velodyneの実行
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch velodyne velodyne-all-nodes-VLP32C-launch.py
+
+(b)haya_imuの実行
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch haya_imu_ros2 haya_imu_launch.py
+
+(c)FAST-LIOの実行
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch fast_lio mapping.launch.py
+
+(d)identificationの実行
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 run identification identification_node
+
+ros2 param set /Identification_node extra_ground_z_margin 0.03
+ros2 param set /Identification_node cell_size 0.10
+ros2 param set /Identification_node voxel_size 0.03
+
+(e)雑草識別ノード
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 run weed weed_node
+
+パラメータ変更
+ros2 param set /weed_node min_points_cell 5
+ros2 param set /weed_node scatter_min 0.16
+
+(f)rviz表示
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+rviz2
+
+ログ用のノード
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 run log_node log_node
+
+パラメータ変更
+ros2 param set /ring_roi_trigger_logger target_ring 3
+
+log命令
+ros2 service call /save_one_frame std_srvs/srv/Trigger {}
+
+
+・パラメータの取得
+ros2 param list /Identification_node
+
+・パラメータの変更
+ros2 param set /Identification_node <parameter_name> <value>
+
+・点群の再生
+ros2 bag play Log_identification --clock
+
+
+(a)tfの実行
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 run tf2_ros static_transform_publisher \
+  --x 0 --y 0 --z 0 \
+  --roll 0 --pitch 0 --yaw 0 \
+  --frame-id base_link \
+  --child-frame-id velodyne
+
+(d)LIO-SAMの実行
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 launch lio_sam run.launch.py
+
+(f)serial_btの実行
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 run bt_serial bt_serial_node
+
+
+
+ros2 run tf2_ros static_transform_publisher \
+  --x 0 --y 0 --z 0.028 \
+  --roll 0 --pitch 0 --yaw 0 \
+  --frame-id body \
+  --child-frame-id velodyne
+
+
+
+3.rvizで表示
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+rviz2
+
+
+・imuデータ取得（10分）
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 run imu_logger_node imu_logger_node --ros-args \
+  -p csv_path:=/home/rotatinglegs/imu_logs/test_6h.csv \
+  -p log_interval_sec:=0.002 \
+  -p warmup_sec:=1200.0
+
+・データ処理
+source ~/venvs/allan/bin/activate
+python ~/imu_logs/bias_allan.py
+
+
+・仮想環境から抜ける
+deactivate
+
+
+[確認用のコマンド]
+・ノード間の連携を確認
+rqt_graph
+
+・tfツリーの可視化
+ros2 run tf2_tools view_frames
+
+・トピックの中身の表示
+ros2 topic echo /imu_data
+↓（1回だけ表示）
+ros2 topic echo /imu_data --once
+
+・
+
+＊＊＊＊＊点群の記録・再生＊＊＊＊＊
+↓記録
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 bag record -o ~/Log_pcl/LIO /lio_sam/mapping/cloud_registered
+
+↓再生
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+ros2 bag play ~/Log_pcl/LIO --loop
+
+ros2 bag play ~/Log_pcl/test1 --loop
+ros2 bag play ~/Log_pcl/10agrees --loop
+ros2 bag play ~/Log_pcl/15agrees --loop
+
+
+**patchwork++を使う
+cd ~/patchworkpp_ws
+source ~/ros2_ws/install/setup.bash
+source ~/patchworkpp_ws/install/setup.bash
+ros2 launch patchwork_plusplus vlp32_patchwork.launch.py
+
+
+tf2にvelodyneを認識させるためのコード
+source /opt/ros/humble/setup.bash
+ros2 run tf2_ros static_transform_publisher \
+  --x 0 --y 0 --z 0 \
+  --roll 0 --pitch 0 --yaw 0 \
+  --frame-id base_link \
+  --child-frame-id velodyne
+
+imuのトピックを表示
+ros2 topic echo/imu_data --once
+
+＊＊＊重要＊＊＊
+単一のノードを実行したい場合はros2 runコマンドで問題ないが、
+複数のノードを同時に実行したい場合はros2 launchを使うと良い
+
+
+5.rviz起動後の設定
+Fixed frameをvelodyneに設定
+[Add]よりPoint Cloud2を追加し、topicを指定（topicは"/"を入力すれば選択ができる）
+
+*velodyneのパラメータ設定*
+http://192.168.1.201
+
+sudo wireshark
+　　
+　
