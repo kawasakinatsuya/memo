@@ -1,0 +1,196 @@
+（前提）
+・通信方式：シリアル通信（クラシック方式）
+・”＊”が出てきたら、直後のコードをターミナルで入力して！
+・ESP32のアドレス：B0:B2:1C:A8:0C:BA
+(B0:B2:1C:A8:0C:BA)
+
+右タイヤのESPアドレス↓
+A8:42:E3:CA:37:D6
+
+左タイヤのESPアドレス↓
+B0:B2:1C:A8:8E:CE
+
+（設定手順）
+[1]　ESP32の動作確認
+　→ESP32側で意図した出力ができているか
+　
+[2]　Ubuntu側でBluetooth設定＊
+bluetoothctl list
+出力結果からドライバが機能しているか確認
+
+[3]　Ubuntu側でESP32のスキャン実行
+1個ずつ順番に入力＊
+bluetoothctl
+power on
+agent on
+default-agent
+scan on
+
+実行結果
+[NEW]Device XX:XX:XX:XX:XX:XX ESP32　←ESP32の名前が出てくる
+
+ペアリング＊
+pair B0:B2:1C:A8:0C:BA
+trust B0:B2:1C:A8:0C:BA
+connect B0:B2:1C:A8:0C:BA
+
+右タイヤ↓
+pair A8:42:E3:CA:37:D6
+trust A8:42:E3:CA:37:D6
+connect A8:42:E3:CA:37:D6
+
+左タイヤ↓
+pair B0:B2:1C:A8:8E:CE
+trust B0:B2:1C:A8:8E:CE
+connect B0:B2:1C:A8:8E:CE
+
+
+
+つながっていたら
+exit
+
+
+[3.5]　もし[1]〜[3]でうまく動作しなかった場合(正常に動作していたらここはスキップ)
+（1）ESP32を再起動（電源を抜き差し）
+（2）UbuntuのBluetooth再起動＊
+sudo systemctl restart bluetooth
+（3）クラシックBluetoothをスキャン＊
+sudo hcitool scan
+たぶんこれでESP32のアドレスが出てくるはず
+
+
+[4]　仮想シリアルポートを生成し、ESPと接続
+sudo rfcomm bind 0 B0:B2:1C:A8:0C:BA 1
+//一時的な接続の場合は↓＊
+sudo rfcomm connect 0 XX:XX:XX:XX:XX:XX
+XX:XX〜　：ESP32のアドレス
+この場合, 0を入力しているためrfcomm0という仮想ポートを生成する
+新しいターミナルを開き下のコードを入力＊
+ls /dev/rfcomm*
+結果でrfcomm0が出ていれば仮想ポートを生成できている
+***以上で設定完了***
+
+（起動時（ペアリングがすで済んでいる状態））
+[1]ESP32の電源を入れる
+[2]pc側で接続＊
+sudo rfcomm connect 0 B0:B2:1C:A8:0C:BA 1 
+sudo rfcomm connect 1 B0:B2:1C:A8:0C:BA 1 
+
+[3]pc側からESP32に送信＊
+ros2 topic pub /bt_send std_msgs/String "data: 'Hello from ROS'"
+ESP32にメッセージを送信する用のトピックにメッセージをpublish
+ESP32のターミナルでメメッセージが届いたか確認できる
+[4]ESP側からのメッセージを確認＊
+ros2 topic echo /bt_receive
+ESP32からのメッセージを受け取る用のtopicを指定してechoで表示
+
+
+*トラブル時*
+たまにsudo rfcomm connect 0 B0:B2:1C:A8:0C:BAを入力したターミナルでDisconnected
+となって接続が切れていることがあるため、そのときは再び接続する。
+再接続したとき、場合によってはCan't create RFCOMM TTY: Address already in use
+と出力される。
+これはシステム内では仮想ポートの占有状態が続いていることを示しているため、＊
+sudo rfcomm release 0
+で一度占有状態を開放する。
+ちなみにどんな接続が残っているかは以下のコマンドで確認できる＊
+rfcomm
+まとめると、
+sudo rfcomm release 0
+sudo systemctl restart bluetooth
+bluetoothctl scan on
+sudo rfcomm bind 0 B0:B2:1C:A8:0C:BA 1
+
+モーター
+hcitool scan
+sudo l2ping -c 3 08:D1:F9:E8:49:7A
+sudo rfcomm bind 0 08:D1:F9:E8:49:7A 1
+//bluetoothのボーレート設定
+stty -F /dev/rfcomm0 115200
+sudo rfcomm
+cu -l /dev/rfcomm1 -s 115200
+sudo rfcomm release 0
+
+左タイヤ：B0:B2:1C:A8:8E:CE
+hcitool scan
+sudo l2ping -c 3 B0:B2:1C:A8:8E:CE
+sdptool browse B0:B2:1C:A8:8E:CE
+sudo rfcomm bind 1 B0:B2:1C:A8:8E:CE
+//bluetoothのボーレート設定
+stty -F /dev/rfcomm1 115200
+
+sudo rfcomm
+cu -l /dev/rfcomm1 -s 115200
+sudo rfcomm release 1
+
+右タイヤ：A8:42:E3:CA:37:D6
+hcitool scan
+sudo l2ping -c 3 A8:42:E3:CA:37:D6
+sdptool browse A8:42:E3:CA:37:D6
+sudo rfcomm bind 2 A8:42:E3:CA:37:D6
+//bluetoothのボーレート設定
+stty -F /dev/rfcomm2 115200
+
+sudo rfcomm
+cu -l /dev/rfcomm2 -s 115200
+sudo rfcomm release 2
+sudo cat /dev/rfcomm2
+
+
+テスト用
+hcitool scan
+sudo l2ping -c 3 08:D1:F9:35:A1:BA
+sdptool browse 08:D1:F9:35:A1:BA
+sudo rfcomm bind 1  08:D1:F9:35:A1:BA
+sudo rfcomm
+cu -l /dev/rfcomm1 -s 115200
+sudo rfcomm release 1
+　
+・bluetooth側のボーレートを確認
+stty -F /dev/rfcomm2
+
+・ボーレートを設定
+stty -F /dev/rfcomm2 115200
+
+
+
+bluetoothctl
+
+順番に入力
+power on
+agent on
+default-agent
+scan on
+
+pair B0:B2:1C:A8:0C:BA
+trust B0:B2:1C:A8:0C:BA
+connect B0:B2:1C:A8:0C:BA
+
+connect yesと出たらOK
+exitで抜ける
+
+sudo rfcomm bind 0 B0:B2:1C:A8:0C:BA
+ls /dev/rfcomm*
+
+↓シリアル通信ができるか試す
+sudo apt install screen
+screen /dev/rfcomm0 115200
+
+通信できていることを確認出来たらノード実行可能
+
+
+hcinconfig 
+→bluetoothデバイスの状態を確認
+
+sudo systemctl restart bluetooth
+→bluetoothサービスの再起動
+
+sudo rfcomm bind /dev/rfcomm0 B0:B2:1C:A8:0C:BA 1
+→/dev/rfcomm0という名前の仮想コンポートを作成してB0:B2:1C:A8:0C:BAを接続する
+
+//bluetooth 設定
+lsusb
+lsmod | grep btusb
+sudo modprobe btusb
+sudo systemctl restart bluetooth
+bluetoothctl
